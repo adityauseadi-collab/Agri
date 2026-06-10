@@ -1,0 +1,330 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard – AgriVision AI{% endblock %}
+{% block page_title %}Admin Panel{% endblock %}
+
+{% block content %}
+<!-- Admin banner -->
+<div style="background:linear-gradient(135deg,#1B5E20,#2E7D32);border-radius:16px;
+  padding:24px 28px;margin-bottom:28px;position:relative;overflow:hidden">
+  <div style="position:absolute;right:-30px;top:-30px;width:180px;height:180px;
+    background:rgba(255,255,255,.05);border-radius:50%"></div>
+  <h4 style="color:#fff;margin-bottom:4px">
+    <i class="bi bi-shield-check me-2" style="color:var(--accent)"></i>
+    Admin Control Panel
+  </h4>
+  <p style="color:rgba(255,255,255,.65);font-size:.85rem;margin:0">
+    Platform overview and user management — {{ session.username }}
+  </p>
+</div>
+
+<!-- Stat cards -->
+<div class="row g-3 mb-4">
+  {% set stats = [
+    ('bi-people','#E8F5E9','var(--primary)', total_users, 'Registered Farmers'),
+    ('bi-graph-up-arrow','#E3F2FD','#1565C0', total_pred, 'Total Predictions'),
+    ('bi-search-heart','#FFF8E1','#E65100', total_disease, 'Disease Scans'),
+    ('bi-geo-alt','#F3E5F5','#6A1B9A', total_farms, 'Registered Farms'),
+  ] %}
+  {% for icon, bg, color, val, label in stats %}
+  <div class="col-6 col-xl-3">
+    <div class="stat-card">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="stat-value" style="color:{{ color }}">{{ val }}</div>
+          <div class="stat-label">{{ label }}</div>
+        </div>
+        <div class="stat-icon" style="background:{{ bg }};color:{{ color }}">
+          <i class="bi {{ icon }}"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Tabs -->
+<div class="card">
+  <div class="card-body p-0">
+    <ul class="nav nav-tabs px-3 pt-3" id="adminTabs" role="tablist"
+        style="border-bottom:1px solid var(--border)">
+      <li class="nav-item">
+        <button class="nav-link active fw-semibold" data-bs-toggle="tab" data-bs-target="#usersTab"
+                style="font-size:.87rem;color:var(--text);border:none;border-bottom:3px solid transparent">
+          <i class="bi bi-people me-1"></i>Users ({{ users|length }})
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#predsTab"
+                style="font-size:.87rem;color:var(--text);border:none;border-bottom:3px solid transparent">
+          <i class="bi bi-graph-up me-1"></i>Predictions
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#diseaseTab"
+                style="font-size:.87rem;color:var(--text);border:none;border-bottom:3px solid transparent">
+          <i class="bi bi-search-heart me-1"></i>Disease Reports
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#analyticsTab"
+                style="font-size:.87rem;color:var(--text);border:none;border-bottom:3px solid transparent">
+          <i class="bi bi-bar-chart me-1"></i>Analytics
+        </button>
+      </li>
+    </ul>
+
+    <div class="tab-content" id="adminTabContent">
+
+      <!-- Users tab -->
+      <div class="tab-pane fade show active" id="usersTab">
+        <div class="table-responsive">
+          <table class="table mb-0">
+            <thead><tr>
+              <th>#</th><th>Username</th><th>Email</th><th>Role</th>
+              <th>Joined</th><th>Actions</th>
+            </tr></thead>
+            <tbody>
+              {% for u in users %}
+              <tr>
+                <td style="color:var(--muted);font-size:.8rem">{{ u['id'] }}</td>
+                <td>
+                  <div class="d-flex align-items-center gap-2">
+                    <div style="width:30px;height:30px;border-radius:50%;
+                      background:{% if u['role']=='admin' %}var(--accent){% else %}#E8F5E9{% endif %};
+                      color:{% if u['role']=='admin' %}#1B5E20{% else %}var(--primary){% endif %};
+                      display:flex;align-items:center;justify-content:center;
+                      font-size:.8rem;font-weight:700;flex-shrink:0">
+                      {{ u['username'][0].upper() }}
+                    </div>
+                    <strong style="font-size:.88rem">{{ u['username'] }}</strong>
+                  </div>
+                </td>
+                <td style="font-size:.85rem;color:var(--muted)">{{ u['email'] }}</td>
+                <td>
+                  <span class="badge px-2 py-1"
+                        style="background:{% if u['role']=='admin'%}#FFF8E1;color:#E65100{% else %}#E8F5E9;color:var(--primary){% endif %};
+                          border-radius:6px;font-size:.74rem">
+                    {{ u['role'] }}
+                  </span>
+                </td>
+                <td style="font-size:.8rem;color:var(--muted)">
+                  {{ u['created_at'][:10] if u['created_at'] else '—' }}
+                </td>
+                <td>
+                  {% if u['role'] != 'admin' %}
+                  <button onclick="confirmDeleteUser({{ u['id'] }}, '{{ u['username'] }}')"
+                          class="btn btn-sm py-1 px-2"
+                          style="background:#FFEBEE;color:#c62828;border:none;border-radius:6px;font-size:.78rem">
+                    <i class="bi bi-trash"></i> Delete
+                  </button>
+                  {% else %}
+                  <span style="font-size:.78rem;color:var(--muted)">Protected</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Predictions tab -->
+      <div class="tab-pane fade" id="predsTab">
+        <div class="table-responsive">
+          <table class="table mb-0">
+            <thead><tr>
+              <th>Farmer</th><th>Crop</th><th>Predicted Yield</th>
+              <th>Confidence</th><th>Rainfall</th><th>Temp</th><th>Date</th>
+            </tr></thead>
+            <tbody>
+              {% for p in predictions %}
+              <tr>
+                <td><strong style="font-size:.85rem">{{ p['username'] }}</strong></td>
+                <td style="font-size:.85rem">{{ p['crop_type'] }}</td>
+                <td>
+                  <span style="font-weight:700;color:var(--primary)">
+                    {{ "%.2f"|format(p['predicted_yield']) }}
+                  </span>
+                  <span style="font-size:.75rem;color:var(--muted)"> t/ha</span>
+                </td>
+                <td>
+                  <span class="badge px-2 py-1"
+                        style="background:#E8F5E9;color:var(--primary);border-radius:6px;font-size:.74rem">
+                    {{ p['confidence'] }}%
+                  </span>
+                </td>
+                <td style="font-size:.82rem">{{ p['rainfall'] }} mm</td>
+                <td style="font-size:.82rem">{{ p['temperature'] }}°C</td>
+                <td style="font-size:.78rem;color:var(--muted)">{{ p['prediction_date'][:10] }}</td>
+              </tr>
+              {% endfor %}
+              {% if not predictions %}
+              <tr><td colspan="7" class="text-center py-4" style="color:var(--muted)">
+                No predictions yet.
+              </td></tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Disease tab -->
+      <div class="tab-pane fade" id="diseaseTab">
+        <div class="table-responsive">
+          <table class="table mb-0">
+            <thead><tr>
+              <th>Farmer</th><th>Disease</th><th>Confidence</th>
+              <th>Recommendation</th><th>Date</th>
+            </tr></thead>
+            <tbody>
+              {% for d in diseases %}
+              <tr>
+                <td><strong style="font-size:.85rem">{{ d['username'] }}</strong></td>
+                <td>
+                  {% if d['disease_name'] == 'Healthy Plant' %}
+                  <span style="color:#2E7D32;font-weight:600;font-size:.85rem">
+                    <i class="bi bi-check-circle-fill me-1"></i>{{ d['disease_name'] }}
+                  </span>
+                  {% else %}
+                  <span style="color:#c62828;font-weight:600;font-size:.85rem">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ d['disease_name'] }}
+                  </span>
+                  {% endif %}
+                </td>
+                <td style="font-size:.82rem">{{ d['confidence'] }}%</td>
+                <td style="font-size:.8rem;color:var(--muted);max-width:260px">
+                  {{ d['recommendation'][:80] }}…
+                </td>
+                <td style="font-size:.78rem;color:var(--muted)">{{ d['detection_date'][:10] }}</td>
+              </tr>
+              {% endfor %}
+              {% if not diseases %}
+              <tr><td colspan="5" class="text-center py-4" style="color:var(--muted)">
+                No disease scans yet.
+              </td></tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Analytics tab -->
+      <div class="tab-pane fade" id="analyticsTab">
+        <div class="row g-4 p-3">
+          <div class="col-md-6">
+            <div class="card border-0" style="background:#F8FFF8">
+              <div class="card-header" style="background:transparent">
+                <i class="bi bi-pie-chart me-2" style="color:var(--secondary)"></i>Platform Usage
+              </div>
+              <div class="card-body">
+                <canvas id="usageChart" height="200"></canvas>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card border-0" style="background:#F8FFF8">
+              <div class="card-header" style="background:transparent">
+                <i class="bi bi-activity me-2" style="color:var(--secondary)"></i>Activity Summary
+              </div>
+              <div class="card-body">
+                <canvas id="activityChart" height="200"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- tab-content -->
+  </div>
+</div>
+
+<!-- Delete user modal -->
+<div class="modal fade" id="deleteUserModal" tabindex="-1">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content" style="border-radius:16px;border:none">
+      <div class="modal-body text-center p-4">
+        <div style="font-size:2.5rem;margin-bottom:12px">⚠️</div>
+        <h6 style="margin-bottom:6px">Delete User?</h6>
+        <p style="font-size:.84rem;color:var(--muted);margin-bottom:20px" id="deleteUserMsg"></p>
+        <div class="d-flex gap-2">
+          <button class="btn btn-sm flex-fill"
+                  style="border:1.5px solid var(--border);border-radius:8px"
+                  data-bs-dismiss="modal">Cancel</button>
+          <a id="deleteUserLink" href="#" class="btn btn-sm flex-fill fw-bold"
+             style="background:#c62828;color:#fff;border-radius:8px">Delete</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmDeleteUser(id, name) {
+  document.getElementById('deleteUserMsg').textContent =
+    `"${name}" and all their data will be permanently deleted.`;
+  document.getElementById('deleteUserLink').href = `/admin/delete-user/${id}`;
+  new bootstrap.Modal(document.getElementById('deleteUserModal')).show();
+}
+
+// Activate correct tab styling
+document.querySelectorAll('#adminTabs .nav-link').forEach(btn => {
+  btn.addEventListener('shown.bs.tab', function() {
+    document.querySelectorAll('#adminTabs .nav-link').forEach(b =>
+      b.style.borderBottomColor = 'transparent');
+    this.style.borderBottomColor = 'var(--primary)';
+    this.style.color = 'var(--primary)';
+  });
+});
+
+// Usage donut chart
+new Chart(document.getElementById('usageChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Yield Predictions', 'Disease Scans', 'Irrigation Logs', 'Fertilizer Recs'],
+    datasets: [{
+      data: [{{ total_pred }}, {{ total_disease }}, 5, 3],
+      backgroundColor: [
+        'rgba(76,175,80,.8)', 'rgba(230,81,0,.75)',
+        'rgba(21,101,192,.75)', 'rgba(106,27,154,.75)'
+      ],
+      borderWidth: 0,
+    }]
+  },
+  options: {
+    responsive: true,
+    cutout: '60%',
+    plugins: {
+      legend: { position: 'bottom', labels: { font: { size: 11 } } }
+    }
+  }
+});
+
+// Activity bar chart
+new Chart(document.getElementById('activityChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Farmers', 'Farms', 'Predictions', 'Scans'],
+    datasets: [{
+      label: 'Count',
+      data: [{{ total_users }}, {{ total_farms }}, {{ total_pred }}, {{ total_disease }}],
+      backgroundColor: [
+        'rgba(76,175,80,.75)', 'rgba(46,125,50,.75)',
+        'rgba(21,101,192,.75)', 'rgba(230,81,0,.75)'
+      ],
+      borderRadius: 8,
+      borderSkipped: false,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { beginAtZero: true, ticks: { font: { size: 11 } }, grid: { color: 'rgba(0,0,0,.05)' } },
+      x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+    }
+  }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}Register – AgriVision AI{% endblock %}
+
+{% block public_content %}
+<div style="min-height:100vh;background:linear-gradient(135deg,#F0FAF0 0%,#E8F5E9 50%,#F9FBE7 100%);
+  display:flex;align-items:center;justify-content:center;padding:40px 16px;">
+  <div style="width:100%;max-width:440px">
+
+    <div class="text-center mb-4">
+      <a href="/" style="text-decoration:none">
+        <div style="font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.6rem;color:#2E7D32">
+          🌱 AgriVision AI
+        </div>
+      </a>
+      <p style="color:#6b7c6b;font-size:.9rem;margin-top:6px">Create your free farmer account today</p>
+    </div>
+
+    <div style="background:#fff;border:1.5px solid #D4EDD4;border-radius:20px;
+      padding:36px 32px;box-shadow:0 8px 32px rgba(46,125,50,.12)">
+
+      <h4 style="font-family:'Space Grotesk',sans-serif;font-weight:700;margin-bottom:6px;color:#1a2e1a">
+        Create Account
+      </h4>
+      <p style="color:#6b7c6b;font-size:.85rem;margin-bottom:28px">
+        Join 2,400+ farmers using AgriVision AI
+      </p>
+
+      <form method="POST">
+        <div class="mb-3">
+          <label class="form-label">Username</label>
+          <div class="input-group">
+            <span class="input-group-text" style="background:#F0FAF0;border-color:#D4EDD4;border-radius:10px 0 0 10px">
+              <i class="bi bi-person" style="color:#2E7D32"></i>
+            </span>
+            <input type="text" name="username" class="form-control" placeholder="Choose a username"
+                   required autofocus style="border-left:none;border-radius:0 10px 10px 0">
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Email Address</label>
+          <div class="input-group">
+            <span class="input-group-text" style="background:#F0FAF0;border-color:#D4EDD4;border-radius:10px 0 0 10px">
+              <i class="bi bi-envelope" style="color:#2E7D32"></i>
+            </span>
+            <input type="email" name="email" class="form-control" placeholder="you@example.com"
+                   required style="border-left:none;border-radius:0 10px 10px 0">
+          </div>
+        </div>
+        <div class="mb-4">
+          <label class="form-label">Password</label>
+          <div class="input-group">
+            <span class="input-group-text" style="background:#F0FAF0;border-color:#D4EDD4;border-radius:10px 0 0 10px">
+              <i class="bi bi-lock" style="color:#2E7D32"></i>
+            </span>
+            <input type="password" name="password" id="pwInput" class="form-control"
+                   placeholder="Min. 6 characters" minlength="6" required
+                   style="border-left:none;border-right:none;border-radius:0">
+            <button type="button" class="input-group-text" onclick="togglePw()"
+                    style="background:#F0FAF0;border-color:#D4EDD4;cursor:pointer;border-radius:0 10px 10px 0">
+              <i class="bi bi-eye" id="pwIcon" style="color:#6b7c6b"></i>
+            </button>
+          </div>
+          <div style="font-size:.75rem;color:#6b7c6b;margin-top:6px">
+            Must be at least 6 characters
+          </div>
+        </div>
+
+        <div class="form-check mb-4">
+          <input type="checkbox" class="form-check-input" id="terms" required>
+          <label class="form-check-label" for="terms" style="font-size:.84rem;color:#6b7c6b">
+            I agree to the <a href="#" style="color:#2E7D32">Terms of Service</a> and
+            <a href="#" style="color:#2E7D32">Privacy Policy</a>
+          </label>
+        </div>
+
+        <button type="submit" class="btn btn-success w-100 fw-bold py-2" style="border-radius:10px;font-size:.95rem">
+          <i class="bi bi-person-plus me-2"></i>Create Free Account
+        </button>
+      </form>
+
+      <hr style="margin:24px 0;border-color:#D4EDD4">
+      <div style="text-align:center;font-size:.85rem;color:#6b7c6b">
+        Already have an account?
+        <a href="{{ url_for('login') }}" style="color:#2E7D32;font-weight:600;text-decoration:none">
+          Sign in here
+        </a>
+      </div>
+    </div>
+
+    <div class="text-center mt-3" style="font-size:.78rem;color:#6b7c6b">
+      <a href="/" style="color:#6b7c6b;text-decoration:none">
+        <i class="bi bi-arrow-left me-1"></i>Back to homepage
+      </a>
+    </div>
+  </div>
+</div>
+<script>
+function togglePw() {
+  const inp = document.getElementById('pwInput');
+  const ico = document.getElementById('pwIcon');
+  inp.type  = inp.type === 'password' ? 'text' : 'password';
+  ico.className = inp.type === 'password' ? 'bi bi-eye' : 'bi bi-eye-slash';
+}
+</script>
+{% endblock %}

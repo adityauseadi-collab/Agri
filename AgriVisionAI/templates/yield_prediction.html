@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+{% block title %}Yield Prediction – AgriVision AI{% endblock %}
+{% block page_title %}Crop Yield Prediction{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <!-- Input form -->
+  <div class="col-lg-5">
+    <div class="card">
+      <div class="card-header">
+        <i class="bi bi-graph-up-arrow me-2" style="color:var(--secondary)"></i>
+        Enter Field Parameters
+      </div>
+      <div class="card-body">
+        <form method="POST">
+          <div class="mb-3">
+            <label class="form-label">Crop Type</label>
+            <select name="crop_type" class="form-select" required>
+              <option value="">Select crop…</option>
+              {% for c in ['Barley','Cotton','Maize','Potato','Rice','Sorghum','Soybean','Sugarcane','Tomato','Wheat'] %}
+              <option value="{{ c }}">{{ c }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-6">
+              <label class="form-label">Rainfall (mm)</label>
+              <input type="number" name="rainfall" class="form-control" placeholder="e.g. 800"
+                     min="100" max="3000" step="1" required>
+            </div>
+            <div class="col-6">
+              <label class="form-label">Temperature (°C)</label>
+              <input type="number" name="temperature" class="form-control" placeholder="e.g. 25"
+                     min="5" max="50" step="0.1" required>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-6">
+              <label class="form-label">Humidity (%)</label>
+              <input type="number" name="humidity" class="form-control" placeholder="e.g. 60"
+                     min="10" max="100" step="1" required>
+            </div>
+            <div class="col-6">
+              <label class="form-label">Soil pH</label>
+              <input type="number" name="soil_ph" class="form-control" placeholder="e.g. 6.5"
+                     min="4" max="9" step="0.1" required>
+            </div>
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label fw-semibold" style="color:var(--primary)">
+              <i class="bi bi-flower1 me-1"></i>Soil Nutrients (kg/ha)
+            </label>
+          </div>
+          <div class="row g-3 mb-4">
+            <div class="col-4">
+              <label class="form-label">Nitrogen</label>
+              <input type="number" name="nitrogen" class="form-control" placeholder="N"
+                     min="0" max="200" step="1" required>
+            </div>
+            <div class="col-4">
+              <label class="form-label">Phosphorus</label>
+              <input type="number" name="phosphorus" class="form-control" placeholder="P"
+                     min="0" max="150" step="1" required>
+            </div>
+            <div class="col-4">
+              <label class="form-label">Potassium</label>
+              <input type="number" name="potassium" class="form-control" placeholder="K"
+                     min="0" max="150" step="1" required>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">
+            <i class="bi bi-cpu me-2"></i>Run AI Prediction
+          </button>
+        </form>
+
+        <!-- Sample fill button -->
+        <button type="button" class="btn btn-sm w-100 mt-2"
+                style="background:#F0FAF0;color:var(--primary);border:1px dashed var(--secondary);border-radius:10px"
+                onclick="fillSample()">
+          <i class="bi bi-magic me-1"></i>Fill with sample data
+        </button>
+      </div>
+    </div>
+
+    <!-- Tips card -->
+    <div class="card mt-3" style="background:#FFF8E1;border-color:#FFD54F">
+      <div class="card-body" style="padding:18px">
+        <h6 style="color:#E65100;font-size:.85rem;font-weight:700;margin-bottom:10px">
+          <i class="bi bi-lightbulb me-1"></i> Input Tips
+        </h6>
+        <ul style="font-size:.8rem;color:#5D4037;margin:0;padding-left:16px;line-height:1.7">
+          <li>Measure soil pH with a calibrated meter</li>
+          <li>Use last 30-day average rainfall</li>
+          <li>Nutrients should be from a soil test</li>
+          <li>Optimal pH for most crops: 6.0–7.0</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Result panel -->
+  <div class="col-lg-7">
+    {% if result %}
+    <!-- Result card -->
+    <div class="result-card mb-4">
+      <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+        <div>
+          <div style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;
+            color:var(--primary);margin-bottom:6px">Predicted Yield</div>
+          <div class="result-value">{{ result.yield }}</div>
+          <div style="font-size:.9rem;color:var(--muted);margin-top:2px">tonnes per hectare</div>
+          <div style="font-size:.88rem;color:var(--muted);margin-top:8px">
+            Crop: <strong style="color:var(--text)">{{ result.crop }}</strong>
+          </div>
+        </div>
+        <div class="text-center">
+          <div style="font-size:.75rem;font-weight:600;color:var(--muted);margin-bottom:6px">AI Confidence</div>
+          <!-- Radial gauge approximation -->
+          <div style="position:relative;width:90px;height:90px">
+            <svg viewBox="0 0 90 90" style="width:90px;height:90px;transform:rotate(-90deg)">
+              <circle cx="45" cy="45" r="36" fill="none" stroke="#E8F5E9" stroke-width="10"/>
+              <circle cx="45" cy="45" r="36" fill="none" stroke="var(--secondary)" stroke-width="10"
+                stroke-dasharray="{{ (result.confidence/100*226)|round }} 226"
+                stroke-linecap="round"/>
+            </svg>
+            <div style="position:absolute;inset:0;display:flex;flex-direction:column;
+              align-items:center;justify-content:center;transform:rotate(0)">
+              <span style="font-size:1.05rem;font-weight:800;color:var(--primary)">{{ result.confidence }}%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Interpretation bar -->
+      <div style="margin-top:20px">
+        {% if result.yield < 2 %}
+          {% set yield_level = ('Low Yield','danger','Consider soil amendment and better irrigation practices.') %}
+        {% elif result.yield < 5 %}
+          {% set yield_level = ('Moderate Yield','warning','Average productivity. Optimise fertilizer and water schedules.') %}
+        {% else %}
+          {% set yield_level = ('High Yield','success','Excellent prediction! Ensure proper storage and marketing plan.') %}
+        {% endif %}
+        <div class="d-flex align-items-center gap-3">
+          <span class="badge px-3 py-2 badge-{{ yield_level[1] }}" style="border-radius:8px;font-size:.8rem">
+            {{ yield_level[0] }}
+          </span>
+          <span style="font-size:.83rem;color:var(--muted)">{{ yield_level[2] }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- History chart -->
+    {% if result.history %}
+    <div class="card">
+      <div class="card-header">
+        <i class="bi bi-clock-history me-2" style="color:var(--secondary)"></i>
+        Prediction History (last {{ result.history|length }} runs)
+      </div>
+      <div class="card-body">
+        <canvas id="historyChart" height="180"></canvas>
+      </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <!-- Empty state -->
+    <div class="card h-100 d-flex align-items-center justify-content-center"
+         style="min-height:400px">
+      <div class="text-center" style="color:var(--muted);padding:40px">
+        <div style="font-size:4rem;opacity:.25">🌾</div>
+        <h5 style="margin:20px 0 10px;color:var(--text)">AI Yield Predictor</h5>
+        <p style="font-size:.88rem;line-height:1.6;max-width:300px;margin:0 auto">
+          Fill in your field parameters on the left and click
+          <strong>Run AI Prediction</strong> to get an instant yield forecast.
+        </p>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function fillSample() {
+  const sel = document.querySelector('[name=crop_type]');
+  const crops = ['Rice','Wheat','Maize','Potato','Soybean'];
+  sel.value = crops[Math.floor(Math.random()*crops.length)];
+  document.querySelector('[name=rainfall]').value    = (Math.random()*800+400).toFixed(0);
+  document.querySelector('[name=temperature]').value = (Math.random()*15+20).toFixed(1);
+  document.querySelector('[name=humidity]').value    = (Math.random()*40+40).toFixed(0);
+  document.querySelector('[name=soil_ph]').value     = (Math.random()*2+5.5).toFixed(1);
+  document.querySelector('[name=nitrogen]').value    = (Math.random()*80+40).toFixed(0);
+  document.querySelector('[name=phosphorus]').value  = (Math.random()*40+20).toFixed(0);
+  document.querySelector('[name=potassium]').value   = (Math.random()*40+20).toFixed(0);
+}
+</script>
+{% if result and result.history %}
+<script>
+const hCtx = document.getElementById('historyChart').getContext('2d');
+const hLabels = {{ result.history | map(attribute='crop_type') | list | tojson }};
+const hData   = {{ result.history | map(attribute='predicted_yield') | list | tojson }};
+new Chart(hCtx, {
+  type: 'line',
+  data: {
+    labels: hLabels,
+    datasets: [{
+      label: 'Yield (t/ha)',
+      data: hData,
+      borderColor: '#2E7D32',
+      backgroundColor: 'rgba(76,175,80,.12)',
+      borderWidth: 2.5,
+      pointBackgroundColor: '#2E7D32',
+      pointRadius: 5,
+      tension: 0.4,
+      fill: true,
+    }]
+  },
+  options: {
+    responsive:true,
+    plugins:{legend:{display:false}},
+    scales:{
+      y:{beginAtZero:false,grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{size:11}}},
+      x:{grid:{display:false},ticks:{font:{size:11}}}
+    }
+  }
+});
+</script>
+{% endif %}
+{% endblock %}

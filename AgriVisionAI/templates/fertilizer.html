@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+{% block title %}Fertilizer Advisor – AgriVision AI{% endblock %}
+{% block page_title %}Fertilizer Recommendation{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header">
+        <i class="bi bi-flower1 me-2" style="color:#6A1B9A"></i>
+        Soil Nutrient Levels
+      </div>
+      <div class="card-body">
+        <form method="POST">
+          <div class="mb-3">
+            <label class="form-label">Crop Type</label>
+            <select name="crop_type" class="form-select" required>
+              <option value="">Select crop…</option>
+              {% for c in ['Barley','Cotton','Maize','Potato','Rice','Sorghum','Soybean','Sugarcane','Tomato','Wheat'] %}
+              <option value="{{ c }}">{{ c }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label fw-semibold" style="color:var(--primary)">Soil Test Results (kg/ha)</label>
+            <div class="p-3" style="background:#F8FFF8;border:1px solid var(--border);border-radius:12px">
+              <div class="mb-3">
+                <label class="form-label" style="font-size:.82rem">
+                  Nitrogen (N) — <span style="color:#1565C0">current: <span id="nVal">–</span></span>
+                </label>
+                <input type="range" class="form-range" name="nitrogen" id="nRange"
+                       min="0" max="150" value="80" oninput="nVal.textContent=this.value+'kg/ha'">
+                <input type="hidden" name="nitrogen" id="nHidden" value="80">
+              </div>
+              <div class="mb-3">
+                <label class="form-label" style="font-size:.82rem">
+                  Phosphorus (P) — <span style="color:#6A1B9A">current: <span id="pVal">–</span></span>
+                </label>
+                <input type="range" class="form-range" name="phosphorus" id="pRange"
+                       min="0" max="100" value="40" oninput="pVal.textContent=this.value+'kg/ha'">
+                <input type="hidden" name="phosphorus" id="pHidden" value="40">
+              </div>
+              <div class="mb-0">
+                <label class="form-label" style="font-size:.82rem">
+                  Potassium (K) — <span style="color:#E65100">current: <span id="kVal">–</span></span>
+                </label>
+                <input type="range" class="form-range" name="potassium" id="kRange"
+                       min="0" max="100" value="50" oninput="kVal.textContent=this.value+'kg/ha'">
+                <input type="hidden" name="potassium" id="kHidden" value="50">
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100 fw-bold py-2" id="submitBtn">
+            <i class="bi bi-flower1 me-2"></i>Get Recommendation
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Result -->
+  <div class="col-lg-8">
+    {% if result %}
+    <!-- NPK status bars -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <i class="bi bi-bar-chart-horizontal me-2"></i>NPK Soil Status
+      </div>
+      <div class="card-body">
+        <canvas id="npkChart" height="120"></canvas>
+      </div>
+    </div>
+
+    <!-- Recommendation -->
+    <div class="result-card mb-4">
+      <div class="d-flex gap-3 align-items-start">
+        <div style="font-size:2.5rem;flex-shrink:0">🌿</div>
+        <div>
+          <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;
+            letter-spacing:.07em;color:var(--primary);margin-bottom:6px">Recommended Fertilizer</div>
+          <h3 style="font-family:'Space Grotesk',sans-serif;color:var(--primary-d);margin-bottom:8px">
+            {{ result.name }}
+          </h3>
+          <div class="d-flex gap-3 flex-wrap">
+            <span style="background:#fff;border:1.5px solid var(--secondary);border-radius:8px;
+              padding:6px 14px;font-size:.85rem;font-weight:600;color:var(--primary)">
+              <i class="bi bi-bag me-1"></i>{{ result.qty }}
+            </span>
+            <span style="background:#fff;border:1.5px solid var(--secondary);border-radius:8px;
+              padding:6px 14px;font-size:.85rem;font-weight:600;color:var(--primary)">
+              <i class="bi bi-crop me-1"></i>{{ result.crop }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div style="background:#fff;border-radius:10px;padding:16px;margin-top:18px;
+        border:1px solid var(--border)">
+        <h6 style="font-size:.83rem;font-weight:700;color:var(--muted);margin-bottom:8px">
+          <i class="bi bi-info-circle me-1"></i>Application Instructions
+        </h6>
+        <p style="font-size:.87rem;color:var(--text);margin:0;line-height:1.65">
+          {{ result.rec }}
+        </p>
+      </div>
+    </div>
+
+    <!-- General tips -->
+    <div class="card" style="background:#F3E5F5;border-color:#CE93D8">
+      <div class="card-body p-3">
+        <h6 style="color:#6A1B9A;font-size:.83rem;font-weight:700;margin-bottom:8px">
+          <i class="bi bi-lightbulb me-1"></i>Fertilizer Application Tips
+        </h6>
+        <ul style="font-size:.8rem;color:#4A148C;margin:0;padding-left:16px;line-height:1.7">
+          <li>Apply during early morning or late evening to minimize evaporation</li>
+          <li>Water the field immediately after applying dry fertilizers</li>
+          <li>Keep records of applications to avoid over-fertilizing</li>
+          <li>Test soil again after 6 months to track nutrient changes</li>
+        </ul>
+      </div>
+    </div>
+
+    {% else %}
+    <div class="card h-100 d-flex align-items-center justify-content-center" style="min-height:380px">
+      <div class="text-center" style="color:var(--muted);padding:40px">
+        <div style="font-size:4rem;opacity:.25">🌿</div>
+        <h5 style="margin:20px 0 10px;color:var(--text)">Fertilizer Advisor</h5>
+        <p style="font-size:.88rem;line-height:1.6;max-width:300px;margin:0 auto">
+          Adjust the soil nutrient sliders to match your soil test results and get a
+          personalised fertilizer recommendation.
+        </p>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Sync sliders → hidden inputs & display values
+const ranges = [
+  { range: 'nRange', hidden: 'nHidden', display: 'nVal' },
+  { range: 'pRange', hidden: 'pHidden', display: 'pVal' },
+  { range: 'kRange', hidden: 'kHidden', display: 'kVal' },
+];
+ranges.forEach(({ range, hidden, display }) => {
+  const r = document.getElementById(range);
+  const h = document.getElementById(hidden);
+  const d = document.getElementById(display);
+  function sync() {
+    d.textContent = r.value + ' kg/ha';
+    h.value = r.value;
+  }
+  sync();
+  r.addEventListener('input', sync);
+});
+
+// Remove duplicate names on submit (only keep hidden inputs)
+document.querySelector('form').addEventListener('submit', function() {
+  ['nRange','pRange','kRange'].forEach(id => {
+    document.getElementById(id).removeAttribute('name');
+  });
+});
+</script>
+{% if result %}
+<script>
+const npkCtx = document.getElementById('npkChart').getContext('2d');
+new Chart(npkCtx, {
+  type: 'bar',
+  data: {
+    labels: ['Nitrogen (N)','Phosphorus (P)','Potassium (K)'],
+    datasets: [
+      {
+        label: 'Current Level',
+        data: [{{ result.n }}, {{ result.p }}, {{ result.k }}],
+        backgroundColor: ['rgba(21,101,192,.7)','rgba(106,27,154,.7)','rgba(230,81,0,.7)'],
+        borderRadius: 8,
+      },
+      {
+        label: 'Optimal Level',
+        data: [80, 40, 50],
+        backgroundColor: ['rgba(21,101,192,.2)','rgba(106,27,154,.2)','rgba(230,81,0,.2)'],
+        borderRadius: 8,
+        borderDash: [5,5],
+      }
+    ]
+  },
+  options: {
+    responsive:true,
+    plugins:{
+      legend:{position:'top',labels:{font:{size:11}}},
+      tooltip:{callbacks:{label:ctx=>` ${ctx.parsed.y} kg/ha`}}
+    },
+    scales:{
+      y:{beginAtZero:true,grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{size:11}}},
+      x:{grid:{display:false},ticks:{font:{size:11}}}
+    }
+  }
+});
+</script>
+{% endif %}
+{% endblock %}

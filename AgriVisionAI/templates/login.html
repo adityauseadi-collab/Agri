@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Login – AgriVision AI{% endblock %}
+
+{% block public_content %}
+<div style="min-height:100vh;background:linear-gradient(135deg,#F0FAF0 0%,#E8F5E9 50%,#F9FBE7 100%);
+  display:flex;align-items:center;justify-content:center;padding:40px 16px;">
+  <div style="width:100%;max-width:420px">
+
+    <!-- Brand -->
+    <div class="text-center mb-4">
+      <a href="/" style="text-decoration:none">
+        <div style="font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.6rem;color:#2E7D32">
+          🌱 AgriVision AI
+        </div>
+      </a>
+      <p style="color:#6b7c6b;font-size:.9rem;margin-top:6px">Welcome back to your farm dashboard</p>
+    </div>
+
+    <!-- Card -->
+    <div style="background:#fff;border:1.5px solid #D4EDD4;border-radius:20px;
+      padding:36px 32px;box-shadow:0 8px 32px rgba(46,125,50,.12)">
+
+      <h4 style="font-family:'Space Grotesk',sans-serif;font-weight:700;margin-bottom:6px;color:#1a2e1a">
+        Sign In
+      </h4>
+      <p style="color:#6b7c6b;font-size:.85rem;margin-bottom:28px">
+        Enter your credentials to access your account
+      </p>
+
+      <form method="POST">
+        <div class="mb-3">
+          <label class="form-label">Username</label>
+          <div class="input-group">
+            <span class="input-group-text" style="background:#F0FAF0;border-color:#D4EDD4;border-radius:10px 0 0 10px">
+              <i class="bi bi-person" style="color:#2E7D32"></i>
+            </span>
+            <input type="text" name="username" class="form-control" placeholder="Your username"
+                   required autofocus style="border-left:none;border-radius:0 10px 10px 0">
+          </div>
+        </div>
+        <div class="mb-4">
+          <label class="form-label">Password</label>
+          <div class="input-group">
+            <span class="input-group-text" style="background:#F0FAF0;border-color:#D4EDD4;border-radius:10px 0 0 10px">
+              <i class="bi bi-lock" style="color:#2E7D32"></i>
+            </span>
+            <input type="password" name="password" id="pwInput" class="form-control"
+                   placeholder="Your password" required style="border-left:none;border-right:none;border-radius:0">
+            <button type="button" class="input-group-text" onclick="togglePw()"
+                    style="background:#F0FAF0;border-color:#D4EDD4;cursor:pointer;border-radius:0 10px 10px 0">
+              <i class="bi bi-eye" id="pwIcon" style="color:#6b7c6b"></i>
+            </button>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-success w-100 fw-bold py-2" style="border-radius:10px;font-size:.95rem">
+          <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+        </button>
+      </form>
+
+      <hr style="margin:24px 0;border-color:#D4EDD4">
+
+      <div style="text-align:center;font-size:.85rem;color:#6b7c6b">
+        Don't have an account?
+        <a href="{{ url_for('register') }}" style="color:#2E7D32;font-weight:600;text-decoration:none">
+          Create one free
+        </a>
+      </div>
+
+      <!-- Demo credentials hint -->
+      <div style="background:#FFF8E1;border:1px solid #FFCC02;border-radius:10px;
+        padding:12px 16px;margin-top:18px;font-size:.8rem;color:#5D4037">
+        <strong>Demo Admin:</strong> username <code>admin</code> / password <code>admin123</code>
+      </div>
+    </div>
+
+    <div class="text-center mt-3" style="font-size:.78rem;color:#6b7c6b">
+      <a href="/" style="color:#6b7c6b;text-decoration:none">
+        <i class="bi bi-arrow-left me-1"></i>Back to homepage
+      </a>
+    </div>
+  </div>
+</div>
+
+<script>
+function togglePw() {
+  const inp = document.getElementById('pwInput');
+  const ico = document.getElementById('pwIcon');
+  inp.type  = inp.type === 'password' ? 'text' : 'password';
+  ico.className = inp.type === 'password' ? 'bi bi-eye' : 'bi bi-eye-slash';
+}
+</script>
+{% endblock %}

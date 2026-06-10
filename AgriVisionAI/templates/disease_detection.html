@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% block title %}Disease Detection – AgriVision AI{% endblock %}
+{% block page_title %}Plant Disease Detection{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <!-- Upload form -->
+  <div class="col-lg-5">
+    <div class="card">
+      <div class="card-header">
+        <i class="bi bi-search-heart me-2" style="color:#E65100"></i>
+        Upload Plant Image
+      </div>
+      <div class="card-body">
+        <form method="POST" enctype="multipart/form-data">
+          <!-- Drop zone -->
+          <div id="dropZone" style="border:2.5px dashed var(--border);border-radius:14px;
+            padding:40px 20px;text-align:center;cursor:pointer;
+            background:#FAFFF8;transition:all .2s;margin-bottom:20px"
+            onclick="document.getElementById('imgInput').click()"
+            ondragover="event.preventDefault();this.style.borderColor='var(--secondary)'"
+            ondragleave="this.style.borderColor='var(--border)'"
+            ondrop="handleDrop(event)">
+            <div id="preview" style="display:none;margin-bottom:12px">
+              <img id="previewImg" style="max-height:180px;border-radius:10px;max-width:100%">
+            </div>
+            <div id="dropText">
+              <i class="bi bi-cloud-arrow-up" style="font-size:2.5rem;color:var(--secondary)"></i>
+              <p style="font-weight:600;margin:10px 0 4px;color:var(--text)">Drop image here</p>
+              <p style="font-size:.82rem;color:var(--muted)">or click to browse — PNG, JPG, WebP</p>
+            </div>
+            <input type="file" name="image" id="imgInput" accept="image/*"
+                   style="display:none" required onchange="previewImage(this)">
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">
+            <i class="bi bi-cpu me-2"></i>Analyse with AI
+          </button>
+        </form>
+
+        <div class="mt-3 p-3" style="background:#FFF8E1;border-radius:10px;font-size:.8rem;color:#5D4037">
+          <i class="bi bi-lightbulb me-1"></i>
+          <strong>Best results:</strong> Take close-up photos of affected leaves in good natural lighting.
+          Capture both the top and underside of leaves when possible.
+        </div>
+      </div>
+    </div>
+
+    <!-- Supported diseases -->
+    <div class="card mt-3">
+      <div class="card-header">
+        <i class="bi bi-list-check me-2"></i>Detectable Conditions
+      </div>
+      <div class="card-body" style="padding:16px">
+        {% for d in ['Leaf Blight','Powdery Mildew','Root Rot','Bacterial Spot',
+                     'Mosaic Virus','Anthracnose','Early Blight','Healthy Plant'] %}
+        <span class="badge me-1 mb-1 px-2 py-1"
+              style="background:{% if d=='Healthy Plant'%}#E8F5E9;color:#2E7D32{% else %}#FFF8E1;color:#E65100{% endif %};
+                font-size:.75rem;border-radius:6px;font-weight:500">{{ d }}</span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Result panel -->
+  <div class="col-lg-7">
+    {% if result %}
+    <div class="card">
+      <div class="card-header">
+        <i class="bi bi-file-medical me-2" style="color:#E65100"></i>
+        Detection Report
+      </div>
+      <div class="card-body">
+        <div class="row g-4 align-items-start">
+          <!-- Uploaded image -->
+          <div class="col-md-5">
+            <img src="{{ url_for('static', filename=result.image) }}"
+                 style="width:100%;border-radius:12px;border:2px solid var(--border)" alt="Uploaded plant">
+          </div>
+          <!-- Diagnosis -->
+          <div class="col-md-7">
+            <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;
+              letter-spacing:.07em;color:var(--muted);margin-bottom:8px">Diagnosis</div>
+            <h4 style="font-family:'Space Grotesk',sans-serif;color:
+              {% if result.disease=='Healthy Plant' %}var(--primary){% else %}#c62828{% endif %};
+              margin-bottom:10px">
+              {% if result.disease=='Healthy Plant' %}
+              <i class="bi bi-check-circle-fill me-2"></i>
+              {% else %}
+              <i class="bi bi-exclamation-circle-fill me-2"></i>
+              {% endif %}
+              {{ result.disease }}
+            </h4>
+
+            <!-- Confidence -->
+            <div class="mb-3">
+              <div class="d-flex justify-content-between mb-1">
+                <span style="font-size:.78rem;color:var(--muted);font-weight:600">Confidence Score</span>
+                <span style="font-size:.8rem;font-weight:700;color:var(--primary)">{{ result.confidence }}%</span>
+              </div>
+              <div style="height:8px;background:#E8F5E9;border-radius:4px">
+                <div style="width:{{ result.confidence }}%;height:100%;
+                  background:{% if result.confidence > 85 %}var(--secondary){% else %}var(--accent){% endif %};
+                  border-radius:4px;transition:width .8s ease"></div>
+              </div>
+            </div>
+
+            <!-- Status badge -->
+            <div class="mb-3">
+              {% if result.disease == 'Healthy Plant' %}
+              <span class="badge px-3 py-2" style="background:#E8F5E9;color:#2E7D32;border-radius:8px">
+                <i class="bi bi-shield-check me-1"></i> No disease found
+              </span>
+              {% else %}
+              <span class="badge px-3 py-2" style="background:#FFEBEE;color:#c62828;border-radius:8px">
+                <i class="bi bi-virus me-1"></i> Disease Detected
+              </span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Treatment recommendation -->
+        <div style="background:{% if result.disease=='Healthy Plant'%}#E8F5E9{% else %}#FFF3E0{% endif %};
+          border-radius:12px;padding:18px;margin-top:16px">
+          <h6 style="font-size:.85rem;font-weight:700;margin-bottom:8px;
+            color:{% if result.disease=='Healthy Plant'%}var(--primary){% else %}#E65100{% endif %}">
+            <i class="bi bi-capsule me-1"></i>
+            {% if result.disease=='Healthy Plant' %}Maintenance Advice{% else %}Treatment Recommendation{% endif %}
+          </h6>
+          <p style="font-size:.87rem;color:#3E2723;margin:0;line-height:1.65">
+            {{ result.treatment }}
+          </p>
+        </div>
+
+        <div class="text-end mt-3">
+          <a href="{{ url_for('disease_detection') }}" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-camera me-1"></i>Scan Another Plant
+          </a>
+        </div>
+      </div>
+    </div>
+
+    {% else %}
+    <div class="card h-100 d-flex align-items-center justify-content-center" style="min-height:400px">
+      <div class="text-center" style="color:var(--muted);padding:40px">
+        <div style="font-size:4rem;opacity:.25">🔬</div>
+        <h5 style="margin:20px 0 10px;color:var(--text)">AI Disease Scanner</h5>
+        <p style="font-size:.88rem;line-height:1.6;max-width:300px;margin:0 auto">
+          Upload a photo of your plant's leaves and our AI will diagnose any diseases
+          and recommend the right treatment instantly.
+        </p>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function previewImage(input) {
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      document.getElementById('previewImg').src = e.target.result;
+      document.getElementById('preview').style.display = 'block';
+      document.getElementById('dropText').style.display = 'none';
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+function handleDrop(e) {
+  e.preventDefault();
+  const input = document.getElementById('imgInput');
+  input.files = e.dataTransfer.files;
+  previewImage(input);
+  document.getElementById('dropZone').style.borderColor = 'var(--border)';
+}
+</script>
+{% endblock %}

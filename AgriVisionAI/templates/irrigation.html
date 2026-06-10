@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block title %}Smart Irrigation – AgriVision AI{% endblock %}
+{% block page_title %}Smart Irrigation Advisor{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header">
+        <i class="bi bi-droplet-half me-2" style="color:#1565C0"></i>
+        Field Conditions
+      </div>
+      <div class="card-body">
+        <form method="POST">
+          <div class="mb-3">
+            <label class="form-label">Soil Moisture (%)</label>
+            <input type="number" name="soil_moisture" id="moistureIn" class="form-control"
+                   placeholder="e.g. 45" min="0" max="100" step="1" required
+                   oninput="updateMoistureBar(this.value)">
+            <div style="height:6px;background:#E3F2FD;border-radius:4px;margin-top:8px">
+              <div id="moistureBar" style="width:0%;height:100%;background:#1565C0;
+                border-radius:4px;transition:width .3s"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--muted);margin-top:3px">
+              <span>Dry</span><span>Optimal (60–75%)</span><span>Saturated</span>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Temperature (°C)</label>
+            <input type="number" name="temperature" class="form-control"
+                   placeholder="e.g. 28" min="0" max="55" step="0.1" required>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label">Rainfall Forecast (mm)</label>
+            <input type="number" name="rainfall_forecast" class="form-control"
+                   placeholder="e.g. 5" min="0" max="500" step="0.1" required>
+            <div style="font-size:.75rem;color:var(--muted);margin-top:4px">
+              Expected rainfall in the next 24 hours
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100 fw-bold py-2">
+            <i class="bi bi-droplet me-2"></i>Get Irrigation Advice
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Info card -->
+    <div class="card mt-3" style="background:#E3F2FD;border-color:#90CAF9">
+      <div class="card-body p-3">
+        <h6 style="color:#1565C0;font-size:.83rem;font-weight:700;margin-bottom:8px">
+          <i class="bi bi-info-circle me-1"></i> Optimal Moisture Ranges
+        </h6>
+        <div style="font-size:.79rem;color:#1a237e;line-height:1.7">
+          <div><strong>Rice:</strong> 80–100% (flooded)</div>
+          <div><strong>Wheat/Maize:</strong> 60–75%</div>
+          <div><strong>Vegetables:</strong> 55–70%</div>
+          <div><strong>Cotton:</strong> 50–65%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Result -->
+  <div class="col-lg-8">
+    {% if result %}
+    <!-- Summary cards -->
+    <div class="row g-3 mb-4">
+      <div class="col-sm-4">
+        <div style="background:#fff;border:1.5px solid #90CAF9;border-radius:14px;padding:20px;text-align:center">
+          <div style="font-size:2.2rem;font-weight:800;color:#1565C0;font-family:'Space Grotesk',sans-serif">
+            {{ result.water }}
+          </div>
+          <div style="font-size:.8rem;color:var(--muted);font-weight:600;margin-top:2px">
+            Inches of water needed
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-4">
+        <div style="background:#fff;border:1.5px solid #D4EDD4;border-radius:14px;padding:20px;text-align:center">
+          <div style="font-size:1.1rem;font-weight:700;color:var(--primary)">{{ result.moisture }}%</div>
+          <div style="font-size:.8rem;color:var(--muted);font-weight:600;margin-top:2px">Current Moisture</div>
+        </div>
+      </div>
+      <div class="col-sm-4">
+        <div style="background:#fff;border:1.5px solid #FFCC02;border-radius:14px;padding:20px;text-align:center">
+          <div style="font-size:.95rem;font-weight:700;color:#E65100">{{ result.rain }} mm</div>
+          <div style="font-size:.8rem;color:var(--muted);font-weight:600;margin-top:2px">Rain Forecast</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Advice card -->
+    <div class="card mb-4">
+      <div class="card-body">
+        <div class="d-flex gap-3 align-items-start">
+          <div style="width:48px;height:48px;border-radius:14px;background:#E3F2FD;
+            display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0">
+            💧
+          </div>
+          <div>
+            <h5 style="font-size:1rem;margin-bottom:8px">AI Irrigation Recommendation</h5>
+            <p style="color:var(--muted);font-size:.9rem;margin:0;line-height:1.65">
+              {{ result.advice }}
+            </p>
+          </div>
+        </div>
+        {% if result.timing != 'Skip irrigation' %}
+        <div style="background:#E8F5E9;border-radius:10px;padding:14px 18px;margin-top:16px">
+          <i class="bi bi-clock me-2" style="color:var(--primary)"></i>
+          <strong style="font-size:.87rem">Best irrigation window:</strong>
+          <span style="font-size:.87rem;color:var(--muted)"> {{ result.timing }}</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Moisture gauge chart -->
+    <div class="card">
+      <div class="card-header">
+        <i class="bi bi-moisture me-2" style="color:#1565C0"></i>Moisture Status Overview
+      </div>
+      <div class="card-body">
+        <canvas id="moistureChart" height="120"></canvas>
+      </div>
+    </div>
+
+    {% else %}
+    <div class="card h-100 d-flex align-items-center justify-content-center" style="min-height:380px">
+      <div class="text-center" style="color:var(--muted);padding:40px">
+        <div style="font-size:4rem;opacity:.25">💧</div>
+        <h5 style="margin:20px 0 10px;color:var(--text)">Smart Irrigation Advisor</h5>
+        <p style="font-size:.88rem;line-height:1.6;max-width:320px;margin:0 auto">
+          Enter your current soil moisture, temperature, and expected rainfall to get
+          precise irrigation recommendations.
+        </p>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function updateMoistureBar(v) {
+  document.getElementById('moistureBar').style.width = Math.min(v,100) + '%';
+}
+</script>
+{% if result %}
+<script>
+const mCtx = document.getElementById('moistureChart').getContext('2d');
+new Chart(mCtx, {
+  type: 'doughnut',
+  data: {
+    labels: ['Current Moisture','Deficit'],
+    datasets:[{
+      data: [{{ result.moisture }}, {{ 100 - result.moisture }}],
+      backgroundColor: ['#1565C0','#E3F2FD'],
+      borderWidth: 0,
+    }]
+  },
+  options: {
+    responsive:true,
+    cutout:'72%',
+    plugins:{
+      legend:{position:'right',labels:{font:{size:12}}},
+      tooltip:{callbacks:{label:ctx=>` ${ctx.parsed}%`}}
+    }
+  }
+});
+</script>
+{% endif %}
+{% endblock %}

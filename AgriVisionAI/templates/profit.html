@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+{% block title %}Profit Predictor – AgriVision AI{% endblock %}
+{% block page_title %}Farm Profit Predictor{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header">
+        <i class="bi bi-currency-dollar me-2" style="color:var(--primary)"></i>
+        Season Parameters
+      </div>
+      <div class="card-body">
+        <form method="POST">
+          <div class="mb-3">
+            <label class="form-label">Expected Yield (t/ha)</label>
+            <input type="number" name="predicted_yield" class="form-control"
+                   placeholder="e.g. 4.5" min="0.1" max="500" step="0.01" required>
+            <div style="font-size:.74rem;color:var(--muted);margin-top:4px">
+              Use your AI yield prediction or actual estimate
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Land Area (acres)</label>
+            <input type="number" name="land_area" class="form-control"
+                   placeholder="e.g. 5" min="0.1" max="10000" step="0.1" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Market Price ($/tonne)</label>
+            <input type="number" name="market_price" class="form-control"
+                   placeholder="e.g. 250" min="1" max="100000" step="1" required>
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label fw-semibold" style="color:#c62828">
+              Costs per Acre
+            </label>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Labor Cost ($/acre)</label>
+            <input type="number" name="labor_cost" class="form-control"
+                   placeholder="e.g. 80" min="0" step="1" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Fertilizer Cost ($/acre)</label>
+            <input type="number" name="fertilizer_cost" class="form-control"
+                   placeholder="e.g. 40" min="0" step="1" required>
+          </div>
+          <div class="mb-4">
+            <label class="form-label">Misc. Costs ($/acre)</label>
+            <input type="number" name="misc_cost" class="form-control"
+                   placeholder="e.g. 20" min="0" step="1" value="0">
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100 fw-bold py-2">
+            <i class="bi bi-calculator me-2"></i>Calculate Profit
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Result -->
+  <div class="col-lg-8">
+    {% if result %}
+    <!-- Summary stat row -->
+    <div class="row g-3 mb-4">
+      {% set metrics = [
+        ('Revenue','$'+result.revenue|string,'bi-arrow-up-right-circle','#E8F5E9','var(--primary)'),
+        ('Expenses','$'+result.expenses|string,'bi-arrow-down-right-circle','#FFEBEE','#c62828'),
+        ('Net Profit','$'+result.profit|string,'bi-wallet2',
+          '#E8F5E9' if result.profit>=0 else '#FFEBEE',
+          'var(--primary)' if result.profit>=0 else '#c62828'),
+        ('ROI',result.roi|string+'%','bi-percent','#FFF8E1','#E65100'),
+      ] %}
+      {% for label, val, icon, bg, color in metrics %}
+      <div class="col-6 col-xl-3">
+        <div class="stat-card">
+          <div class="stat-icon mb-2" style="background:{{ bg }};color:{{ color }}">
+            <i class="bi {{ icon }}"></i>
+          </div>
+          <div style="font-size:1.45rem;font-weight:800;color:{{ color }};
+            font-family:'Space Grotesk',sans-serif">{{ val }}</div>
+          <div class="stat-label">{{ label }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Charts row -->
+    <div class="row g-4">
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header">Revenue vs Expenses</div>
+          <div class="card-body"><canvas id="breakdownChart" height="220"></canvas></div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header">Profit Breakdown</div>
+          <div class="card-body"><canvas id="pieChart" height="220"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Profit health indicator -->
+    <div class="card mt-4" style="background:
+      {% if result.profit > 0 %}linear-gradient(135deg,#E8F5E9,#F1F8E9){% else %}linear-gradient(135deg,#FFEBEE,#FFF3E0){% endif %};
+      border-color:{% if result.profit > 0 %}var(--secondary){% else %}#ef9a9a{% endif %}">
+      <div class="card-body d-flex align-items-center gap-3">
+        <div style="font-size:2.5rem">
+          {% if result.profit > 0 and result.roi > 20 %}🏆
+          {% elif result.profit > 0 %}✅
+          {% else %}⚠️{% endif %}
+        </div>
+        <div>
+          <h6 style="font-size:.9rem;font-weight:700;margin-bottom:4px;
+            color:{% if result.profit>0 %}var(--primary-d){% else %}#c62828{% endif %}">
+            {% if result.profit > 0 and result.roi > 20 %}Excellent Season Ahead!
+            {% elif result.profit > 0 %}Profitable Season Expected
+            {% else %}Caution: Costs Exceed Revenue{% endif %}
+          </h6>
+          <p style="font-size:.83rem;color:var(--muted);margin:0">
+            {% if result.profit > 0 %}
+            You're projected to earn <strong>${{ result.profit }}</strong> profit on {{ result.land }} acres.
+            ROI of {{ result.roi }}% — 
+            {% if result.roi > 20 %}consider scaling up next season.
+            {% else %}look for cost reduction opportunities.{% endif %}
+            {% else %}
+            Review input costs. Consider negotiating better input prices or choosing a higher-value crop.
+            {% endif %}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    {% else %}
+    <div class="card h-100 d-flex align-items-center justify-content-center" style="min-height:400px">
+      <div class="text-center" style="color:var(--muted);padding:40px">
+        <div style="font-size:4rem;opacity:.25">💰</div>
+        <h5 style="margin:20px 0 10px;color:var(--text)">Profit Predictor</h5>
+        <p style="font-size:.88rem;line-height:1.6;max-width:320px;margin:0 auto">
+          Enter your yield estimate, land area, market price, and costs to calculate
+          your expected profit and ROI for the season.
+        </p>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if result %}
+<script>
+// Bar chart
+new Chart(document.getElementById('breakdownChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Revenue','Expenses','Net Profit'],
+    datasets:[{
+      data: [{{ result.revenue }}, {{ result.expenses }}, Math.abs({{ result.profit }})],
+      backgroundColor: ['rgba(76,175,80,.75)','rgba(198,40,40,.65)',
+        {{ result.profit }} >= 0 ? 'rgba(76,175,80,.5)' : 'rgba(255,193,7,.7)'],
+      borderRadius: 8,
+      borderSkipped: false,
+    }]
+  },
+  options:{
+    responsive:true,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`$${ctx.parsed.y.toFixed(2)}`}}},
+    scales:{y:{beginAtZero:true,ticks:{callback:v=>'$'+v}},x:{grid:{display:false}}}
+  }
+});
+
+// Pie chart
+new Chart(document.getElementById('pieChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Revenue','Total Costs'],
+    datasets:[{
+      data: [{{ result.revenue }}, {{ result.expenses }}],
+      backgroundColor: ['rgba(76,175,80,.8)','rgba(198,40,40,.7)'],
+      borderWidth: 0,
+    }]
+  },
+  options:{
+    responsive:true,
+    cutout:'65%',
+    plugins:{
+      legend:{position:'bottom',labels:{font:{size:11}}},
+      tooltip:{callbacks:{label:ctx=>`$${ctx.parsed.toFixed(2)}`}}
+    }
+  }
+});
+</script>
+{% endif %}
+{% endblock %}
